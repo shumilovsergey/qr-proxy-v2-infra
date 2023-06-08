@@ -1,0 +1,32 @@
+version: "3"
+
+services:
+  traefik:
+    container_name: "traefik"
+    image: traefik:v2.10
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=wumilovsergey@gmail.com"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - "./letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  django:
+    image: "ghcr.io/shumilovsergey/qr-proxy-v2:latest"
+    container_name: "django"
+    ports:
+      - "5002:5002"    
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.django.rule=Host(`api.qrproxy.alplottw.ru`)"
+      - "traefik.http.routers.django.entrypoints=websecure"
+      - "traefik.http.routers.django.tls.certresolver=myresolver"
